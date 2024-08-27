@@ -5,10 +5,9 @@ import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { useEffect } from 'react'
 import 'react-native-reanimated'
-
 import { useColorScheme } from '@/components/useColorScheme'
-import ToastList from '@/components/common/toast/ToastList'
 import { Provider } from 'jotai'
+import Toast from 'react-native-toast-message'
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -59,6 +58,7 @@ function RootLayoutNav() {
             <Stack.Screen name="modal" options={{ presentation: 'card' }} />
           </Stack>
         </ThemeProvider>
+        <Toast />
       </Provider>
     </>
   )
