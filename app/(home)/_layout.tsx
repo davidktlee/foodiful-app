@@ -5,6 +5,7 @@ import { Link, Tabs } from 'expo-router'
 import Colors from '@/constants/Colors'
 import { useColorScheme } from '@/components/useColorScheme'
 import { useClientOnlyValue } from '@/components/useClientOnlyValue'
+import { useUserStore } from '@/components/util/userStorage'
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 function TabBarIcon(props: {
@@ -16,6 +17,8 @@ function TabBarIcon(props: {
 
 export default function HomeLayout() {
   const colorScheme = useColorScheme()
+  const { user } = useUserStore()
+  console.log(user)
 
   return (
     <Tabs

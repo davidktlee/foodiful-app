@@ -1,11 +1,11 @@
 import axios from 'axios'
 
 import { api } from '../../axios/axiosInstance'
-// import useToast from '../../common/hooks/useToast'
 // import { removeStoredUser, setStoreUser } from '../../util/userStorage'
-import { PromiseUserType, SignInType, SignUpType } from '@/types/user'
+import { PromiseUserType, SignInType, SignUpType, User } from '@/types/user'
 import { router } from 'expo-router'
-import useToast from '@/components/common/hooks/useToast'
+import Toast from 'react-native-toast-message'
+import { useUserStore } from '@/components/util/userStorage'
 
 interface UseAuth {
   signIn: (param: SignInType) => void
@@ -14,8 +14,7 @@ interface UseAuth {
 }
 
 export const useAuth = (): UseAuth => {
-  const { fireToast } = useToast()
-
+  const { setUser } = useUserStore()
   const signIn = async ({ email, password }: SignInType) => {
     try {
       const { data } = await api.post<PromiseUserType>('/auth/login', {
@@ -23,24 +22,22 @@ export const useAuth = (): UseAuth => {
         password,
       })
       if (data) {
+        setUser(data.user)
         router.push('/')
-        // setStoreUser(data.user)
-        fireToast({
-          id: '로그인',
+        Toast.show({
           type: 'success',
+          text1: '로그인이 완료되었습니다.',
           position: 'bottom',
-          message: '로그인이 완료되었습니다.',
-          timer: 1000,
+          visibilityTime: 2000,
         })
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        fireToast({
-          id: '로그인',
-          type: 'failed',
+        Toast.show({
+          type: 'error',
+          text1: error.response?.data.message,
           position: 'bottom',
-          message: error.response?.data.message,
-          timer: 2000,
+          visibilityTime: 2000,
         })
       }
     }
@@ -49,23 +46,23 @@ export const useAuth = (): UseAuth => {
     try {
       const res = await api.post('/auth/signup', { email, name, password, phone })
       if (res) {
-        fireToast({
-          id: '회원가입 완료',
+        Toast.show({
           type: 'success',
+          text1: '회원가입이 완료되었습니다.',
+          text2: '로그인 해주세요.',
           position: 'bottom',
-          message: '회원가입이 완료되었습니다. 로그인 해주세요.',
-          timer: 2000,
+          visibilityTime: 2000,
         })
-        // router.push('(profile)/signin')
+
+        router.push('/')
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        fireToast({
-          id: '회원가입 이메일 에러',
+        Toast.show({
           type: 'failed',
+          text1: error.response?.data.message,
           position: 'bottom',
-          message: error.response?.data.message,
-          timer: 2000,
+          visibilityTime: 2000,
         })
       }
     }
@@ -74,13 +71,13 @@ export const useAuth = (): UseAuth => {
     // removeStoredUser()
     const res = await api.post('/auth/logout')
     if (res) {
-      fireToast({
-        id: '로그아웃',
+      Toast.show({
         type: 'success',
+        text1: '로그아웃이 완료되었습니다.',
         position: 'bottom',
-        message: '로그아웃이 완료되었습니다.',
-        timer: 2000,
+        visibilityTime: 2000,
       })
+
       // router.replace('/(홈)')
     }
   }

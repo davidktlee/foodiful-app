@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { useState } from 'react'
 import { api } from '../../axios/axiosInstance'
-import useToast from '@/components/common/hooks/useToast'
+import Toast from 'react-native-toast-message'
 
 /**
  * 핸드폰 번호 수정 눌렀을 때 번호 input able
@@ -13,7 +13,6 @@ import useToast from '@/components/common/hooks/useToast'
  */
 
 const usePhoneVerfiy = () => {
-  const { fireToast } = useToast()
   // input disable 여부
   const [isPhoneInputDisabled, setIsPhoneInputDisabled] = useState(false)
   // 존재하는 번호인지 여부
@@ -23,7 +22,7 @@ const usePhoneVerfiy = () => {
   // 인증 버튼 눌렀는지 여부
   const [isClickedVerifyPhone, setIsClickedVerifyPhone] = useState(false)
   // 검증 시간
-  const [time, setTime] = useState(180) // 남은 시간 (단위: 초)
+  const [time, setTime] = useState(0) // 남은 시간 (단위: 초)
   // 만료 시 텍스트
   const [verifyExpiredTxt, setVerifyExpiredTxt] = useState('')
   // 핸드폰 인증 여부
@@ -34,13 +33,12 @@ const usePhoneVerfiy = () => {
       const res = await api.get(`/auth/checkphone/exists?phone=${phone}`)
 
       if (res) setIsExistPhoneNumber(false)
-      setPhoneCheckErrorMsg('')
+      isClickedVerifyPhone && setTime(180)
       return true
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error?.response?.status === 409) {
           setIsExistPhoneNumber(true)
-          setPhoneCheckErrorMsg(error.response.data.message)
         }
       }
     }
@@ -57,12 +55,11 @@ const usePhoneVerfiy = () => {
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {
-        fireToast({
-          id: '문자 전송 오류',
-          type: 'failed',
-          message: '전송 오류입니다. 잠시 후 다시 시도해주세요.',
+        Toast.show({
+          type: 'error',
+          text1: '전송 오류입니다. 잠시 후 다시 시도해주세요.',
           position: 'bottom',
-          timer: 2000,
+          visibilityTime: 2000,
         })
       }
       setTime(0)
@@ -80,12 +77,11 @@ const usePhoneVerfiy = () => {
         },
       })
       if (res) {
-        fireToast({
-          id: '인증 완료',
+        Toast.show({
           type: 'success',
-          message: '인증이 완료되었습니다.',
+          text1: '인증이 완료되었습니다',
           position: 'bottom',
-          timer: 2000,
+          visibilityTime: 2000,
         })
       }
       setIsVerifiedPhone(true)
@@ -94,12 +90,11 @@ const usePhoneVerfiy = () => {
     } catch (error) {
       if (axios.isAxiosError(error)) {
         if (error?.response?.status === 401) {
-          fireToast({
-            id: '인증번호 오류',
-            type: 'failed',
-            message: '인증번호가 틀립니다.',
+          Toast.show({
+            type: 'error',
+            text1: '인증에 실패했습니다.',
             position: 'bottom',
-            timer: 2000,
+            visibilityTime: 2000,
           })
           setIsVerifiedPhone(false)
           setIsClickedVerifyPhone(false)
@@ -107,12 +102,11 @@ const usePhoneVerfiy = () => {
           setIsPhoneInputDisabled(false)
           setVerifyExpiredTxt('인증번호 오류입니다. 다시 시도해주세요')
         } else if (error?.response?.status === 404) {
-          fireToast({
-            id: '인증번호 만료',
-            type: 'failed',
-            message: '인증번호가 만료되었습니다.',
+          Toast.show({
+            type: 'error',
+            text1: '인증번호가 만료되었습니다.',
             position: 'bottom',
-            timer: 2000,
+            visibilityTime: 2000,
           })
           setIsVerifiedPhone(false)
           setIsClickedVerifyPhone(false)
