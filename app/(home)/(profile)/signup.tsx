@@ -1,17 +1,24 @@
 import { Text, View } from '@/components/Themed'
+import { useAuth } from '@/components/auth/hooks/useAuth'
 import usePhoneVerfiy from '@/components/auth/hooks/usePhoneVerify'
+import { useValidate } from '@/components/auth/hooks/useValidate'
+import Input from '@/components/common/Input'
 import { useInput } from '@/components/common/hooks/useInput'
 import { calPhoneVerifyTime } from '@/components/util/getTimes'
-import { Link, router } from 'expo-router'
-import { useEffect } from 'react'
+import { isAxiosError } from 'axios'
+import { Link } from 'expo-router'
+import { useEffect, useState } from 'react'
 import { TextInput, TouchableOpacity } from 'react-native'
+import Toast from 'react-native-toast-message'
 
 export default function SignUpScreen() {
-  const { state: email, onChangeInput: onChangeEmail } = useInput()
-  const { state: name, onChangeInput: onChangeName } = useInput()
-  const { state: password, onChangeInput: onChangePassword } = useInput()
-  const { state: phone, onChangeInput: onChangePhone } = useInput()
+  const { state: email, setState: setEmail, onChangeInput: onChangeEmail } = useInput()
+  const { state: name, setState: setName, onChangeInput: onChangeName } = useInput()
+  const { state: password, setState: setPassword, onChangeInput: onChangePassword } = useInput()
+  const { state: phone, setState: setPhone, onChangeInput: onChangePhone } = useInput()
   const { state: verify, setState: setVerify, onChangeInput: onChangePhoneVerify } = useInput()
+  const [isSignUpDisabled, setIsSignUpDisabled] = useState(true)
+  const { emailValidate, passwordValidate } = useValidate()
   const {
     checkExistPhone,
     checkVerifySms,
@@ -19,17 +26,16 @@ export default function SignUpScreen() {
     isExistPhoneNumber,
     isPhoneInputDisabled,
     isVerifiedPhone,
-    phoneCheckErrorMsg,
     sendVerifySms,
     setIsClickedVerifyPhone,
     setIsExistPhoneNumber,
     setIsPhoneInputDisabled,
     verifyExpiredTxt,
-    setIsVerifiedPhone,
     setTime,
     setVerifyExpiredTxt,
     time,
   } = usePhoneVerfiy()
+  const { signUp } = useAuth()
 
   useEffect(() => {
     if (!!time) {
@@ -37,8 +43,9 @@ export default function SignUpScreen() {
         setTime((prev) => prev - 1)
       }, 1000)
       if (time === 1) {
-        setVerifyExpiredTxt('인증번호를 다시 요청해주세요')
         setIsClickedVerifyPhone(false)
+        setIsPhoneInputDisabled(false)
+        setVerifyExpiredTxt('인증번호를 다시 요청해주세요')
       }
       return () => clearInterval(count)
     }
@@ -46,44 +53,74 @@ export default function SignUpScreen() {
 
   useEffect(() => {
     if (phone.length === 11) {
+      setVerifyExpiredTxt('')
       checkExistPhone(phone)
     } else {
       setIsExistPhoneNumber(false)
     }
   }, [phone])
 
-  const onClickSignUp = () => {}
+  useEffect(() => {
+    if (isVerifiedPhone && emailValidate(email) && passwordValidate(password) && name)
+      setIsSignUpDisabled(false)
+    else setIsSignUpDisabled(true)
+  }, [isVerifiedPhone, email, password, name])
+
+  const onClickSignUp = () => {
+    try {
+      signUp({ email, name, password, phone, verify })
+      setEmail('')
+      setName('')
+      setPassword('')
+      setPhone('')
+    } catch (error) {
+      if (isAxiosError(error)) {
+        Toast.show({
+          type: 'error',
+          text1: '회원가입에 실패했습니다.',
+          text2: error.response?.data.message,
+          visibilityTime: 2000,
+          position: 'bottom',
+        })
+      }
+    }
+  }
   return (
     <View className="flex-1 items-center justify-center">
-      <Text className="text-main text-4xl font-extrabold mb-10">Foodiful</Text>
-      <View className="w-[80%] flex-row items-center gap-x-2 my-4">
-        <Text className="mr-3">이메일</Text>
-        <TextInput
-          className="w-[70%] border-b-2 border-gray-300 h-6"
-          placeholder="이메일을 입력해주세요"
-          value={email}
-          onChange={onChangeEmail}
-        />
-      </View>
-      <View className="w-[80%] flex-row items-center gap-x-2 my-4">
-        <Text className="mr-6">이름</Text>
-        <TextInput
-          className="w-[70%] border-b-2 border-gray-300 h-6"
-          placeholder="이름을 입력해주세요"
-          value={name}
-          onChange={onChangeName}
-        />
-      </View>
-      <View className="w-[80%] flex-row items-center gap-x-2 my-4">
-        <Text className="">패스워드</Text>
-        <TextInput
-          className="w-[70%] border-b-2 border-gray-300 h-6"
-          placeholder="패스워드를 입력해주세요"
-          value={password}
-          secureTextEntry
-          onChange={onChangePassword}
-        />
-      </View>
+      <Text className="text-main text-4xl font-extrabold mb-10">FOODIFUL</Text>
+      <Input
+        containerStyle="w-[80%] gap-x-2 my-2"
+        labelName="이메일"
+        labelStyle="mr-3"
+        style="w-[70%] border-b-2 border-gray-300 h-6"
+        placeholder="이메일을 입력해주세요"
+        value={email}
+        type="email-address"
+        onChange={onChangeEmail}
+        validate={emailValidate}
+        errorText="이메일 형식을 확인해주세요."
+      />
+      <Input
+        containerStyle="w-[80%] gap-x-2 my-2"
+        labelName="이름"
+        labelStyle="mr-6"
+        style="w-[70%] border-b-2 border-gray-300 h-6"
+        placeholder="이름을 입력해주세요"
+        value={name}
+        type="name-phone-pad"
+        onChange={onChangeName}
+      />
+      <Input
+        containerStyle="w-[80%] gap-x-2 my-2"
+        labelName="패스워드"
+        style="w-[70%] border-b-2 border-gray-300 h-6"
+        placeholder="패스워드를 입력해주세요"
+        value={password}
+        onChange={onChangePassword}
+        validate={passwordValidate}
+        secureTextEntry
+        errorText="패스워드 형식을 확인해주세요."
+      />
       <View className="w-[80%] flex-row items-center gap-x-2 my-4 relative">
         <Text className="mr-3">휴대폰</Text>
         <TextInput
@@ -93,20 +130,23 @@ export default function SignUpScreen() {
           value={phone}
           keyboardType="number-pad"
           onChange={onChangePhone}
+          maxLength={11}
         />
         <TouchableOpacity
-          disabled={isExistPhoneNumber || phone.length !== 11}
+          disabled={isExistPhoneNumber || phone.length !== 11 || isVerifiedPhone}
           className="absolute right-8"
           onPress={async () => {
             setIsClickedVerifyPhone(true)
             sendVerifySms(phone)
             setIsPhoneInputDisabled(true)
-            setTime(100)
+            setTime(180)
           }}
         >
           <Text
             className={`text-base ${
-              !isExistPhoneNumber && phone.length === 11 ? 'text-black' : 'text-gray-300'
+              !isExistPhoneNumber && phone.length === 11 && !isVerifiedPhone
+                ? 'text-black'
+                : 'text-gray-300'
             }`}
           >
             인증
@@ -154,13 +194,16 @@ export default function SignUpScreen() {
       </View>
 
       <TouchableOpacity
-        onPress={() => console.log(email, password)}
-        className="border-2 border-main rounded-md my-4 w-[80%] flex-row justify-center"
+        onPress={onClickSignUp}
+        disabled={isSignUpDisabled}
+        className={`border-2 border-main rounded-md py-1 my-4 w-[80%] flex-row justify-center ${
+          isSignUpDisabled && 'bg-gray-200 border-gray-200'
+        }`}
       >
         <Text className="text-lg rounded-md">회원가입</Text>
       </TouchableOpacity>
       <Link href="/(profile)/signin">
-        <Text className="text-lg text-gray-600 rounded-md">로그인</Text>
+        <Text className="text-lg text-gray-600 rounded-md py-1">로그인</Text>
       </Link>
     </View>
   )

@@ -40,6 +40,10 @@ const usePhoneVerfiy = () => {
         if (error?.response?.status === 409) {
           setIsExistPhoneNumber(true)
         }
+        if (error?.response?.status === 409) {
+          setIsExistPhoneNumber(true)
+          setPhoneCheckErrorMsg(error.response.data.message)
+        } else setPhoneCheckErrorMsg('')
       }
     }
   }

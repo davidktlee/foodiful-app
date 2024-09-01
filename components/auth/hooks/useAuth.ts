@@ -1,8 +1,6 @@
 import axios from 'axios'
-
 import { api } from '../../axios/axiosInstance'
-// import { removeStoredUser, setStoreUser } from '../../util/userStorage'
-import { PromiseUserType, SignInType, SignUpType, User } from '@/types/user'
+import { PromiseUserType, SignInType, SignUpType } from '@/types/user'
 import { router } from 'expo-router'
 import Toast from 'react-native-toast-message'
 import { useUserStore } from '@/components/util/userStorage'
@@ -14,16 +12,17 @@ interface UseAuth {
 }
 
 export const useAuth = (): UseAuth => {
-  const { setUser } = useUserStore()
+  const { setUser, removeUser } = useUserStore()
   const signIn = async ({ email, password }: SignInType) => {
     try {
       const { data } = await api.post<PromiseUserType>('/auth/login', {
         email,
         password,
       })
+
       if (data) {
         setUser(data.user)
-        router.push('/')
+        router.replace('/(home)')
         Toast.show({
           type: 'success',
           text1: '로그인이 완료되었습니다.',
@@ -53,13 +52,12 @@ export const useAuth = (): UseAuth => {
           position: 'bottom',
           visibilityTime: 2000,
         })
-
-        router.push('/')
+        router.back()
       }
     } catch (error) {
       if (axios.isAxiosError(error)) {
         Toast.show({
-          type: 'failed',
+          type: 'error',
           text1: error.response?.data.message,
           position: 'bottom',
           visibilityTime: 2000,
@@ -68,8 +66,8 @@ export const useAuth = (): UseAuth => {
     }
   }
   const signOut = async () => {
-    // removeStoredUser()
     const res = await api.post('/auth/logout')
+
     if (res) {
       Toast.show({
         type: 'success',
@@ -77,8 +75,8 @@ export const useAuth = (): UseAuth => {
         position: 'bottom',
         visibilityTime: 2000,
       })
-
-      // router.replace('/(홈)')
+      removeUser()
+      router.replace('/(home)/(profile)/signin')
     }
   }
 
