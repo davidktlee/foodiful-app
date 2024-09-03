@@ -17,8 +17,6 @@ function TabBarIcon(props: {
 
 export default function HomeLayout() {
   const colorScheme = useColorScheme()
-  const { user } = useUserStore()
-  console.log(user)
 
   return (
     <Tabs
@@ -47,8 +45,7 @@ export default function HomeLayout() {
         options={{
           title: '홈',
           headerTitle: '푸디풀 FOODIFUL',
-          // headerTitleStyle:
-          // headerShown: false,
+
           tabBarIcon: ({ color }) => <TabBarIcon name="home" color={color} />,
         }}
       />
